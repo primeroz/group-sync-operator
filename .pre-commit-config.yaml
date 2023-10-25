@@ -1,4 +1,19 @@
 repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.5.0
+  hooks:
+    - id: trailing-whitespace
+      exclude_types: [markdown]
+    - id: end-of-file-fixer
+    - id: check-yaml
+    - id: check-json
+    - id: check-added-large-files
+    - id: check-executables-have-shebangs
+    - id: detect-aws-credentials
+    - id: detect-private-key
+    - id: check-merge-conflict
+      #- id: no-commit-to-branch
+      #  args: ['--branch', 'main', '--pattern', 'release/*', '--pattern', 'release-*']
 - repo: https://github.com/dnephin/pre-commit-golang
   rev: v0.5.1
   hooks:

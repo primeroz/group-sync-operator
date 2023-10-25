@@ -13,7 +13,7 @@ spec:
   sourceUrl: https://gist.githubusercontent.com/primeroz/2f7df71498949026dc29ed4b591e2dc4/raw/81b0d78bc123b69de53b44abfa497844edb0ecb9/plaintext
   format: plaintext
   validationRegex: "^.*@example.com$"
-  transformers: 
+  transformers:
     - type: regexKeep
       value: "^.*@example.com$"
 ---
@@ -31,7 +31,7 @@ spec:
   sourceUrl: https://gist.githubusercontent.com/primeroz/2f7df71498949026dc29ed4b591e2dc4/raw/81b0d78bc123b69de53b44abfa497844edb0ecb9/plaintext
   format: plaintext
   validationRegex: "^.*@example.com$"
-  transformers: 
+  transformers:
     - type: regexKeep
       value: "^.*@example.com$"
     - type: prefix
