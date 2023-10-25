@@ -3,7 +3,6 @@ package validation
 import (
   "regexp"
   "errors"
-  "fmt"
 )
 
 
@@ -20,7 +19,6 @@ func ValidateUsersRegex(users []string, regex string ) error {
   }
 
   for _, user := range users {
-    fmt.Println("DEBUG VALIDATION", user, "REGEX", regex, "RE", re)
     if !re.MatchString(user) {
       return errors.New("Elements of the users list not validating against Validation Regex")
     }

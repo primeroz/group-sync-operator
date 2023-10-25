@@ -161,11 +161,10 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
   // TODO: Should have a plugin interaface here
 	// Apply transformations
   if len(httpSource.Spec.Transformers) > 0 {
+	  log.V(1).Info("Users Before Transformers", "Instance", httpSource.Name)
     for _ , t := range httpSource.Spec.Transformers {
       if t.Type == "regexKeep" {
-        fmt.Println("Pre Regexkeep", users)
         users, err = transformer.RegexKeep(users, t.Value)
-        fmt.Println("post Regexkeep", users)
       } else if t.Type == "regexRemove" {
         users, err = transformer.RegexRemove(users, t.Value)
       } else if t.Type == "prefix" {
@@ -194,8 +193,10 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
         // exit without error so the requeue after works
 	    	return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	    }
-
     }
+
+	  log.V(1).Info("Users After Transformers", "Instance", httpSource.Name)
+
   }
 
 	// Validate - All elements must match 
@@ -226,7 +227,7 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// Update Group
 
 	for _, u := range users {
-		fmt.Println(httpSource.Name, "USER : ", u)
+		fmt.Println("DEBUG", httpSource.Name, "USER : ", u)
 	}
 
   // XXX: How to force the status to always update LastTransitionTime ?
