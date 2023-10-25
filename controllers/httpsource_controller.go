@@ -19,9 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -35,8 +35,8 @@ import (
 
 	groupsyncv1alpha1 "github.com/primeroz/group-sync-operator/api/v1alpha1"
 	"github.com/primeroz/group-sync-operator/pkg/format"
-	"github.com/primeroz/group-sync-operator/pkg/validation"
 	"github.com/primeroz/group-sync-operator/pkg/transformer"
+	"github.com/primeroz/group-sync-operator/pkg/validation"
 )
 
 // HttpSourceReconciler reconciles a HttpSource object
@@ -114,28 +114,28 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		meta.SetStatusCondition(
 			&httpSource.Status.Conditions,
 			metav1.Condition{
-				Type:    "Failed",
-				Status:  metav1.ConditionTrue,
-				Reason:  "Fetching",
-				LastTransitionTime:  metav1.Now(),
-				Message: fmt.Sprintf("Failed to fetch file from %s", httpSource.Spec.SourceUrl)})
+				Type:               "Failed",
+				Status:             metav1.ConditionTrue,
+				Reason:             "Fetching",
+				LastTransitionTime: metav1.Now(),
+				Message:            fmt.Sprintf("Failed to fetch file from %s", httpSource.Spec.SourceUrl)})
 
 		if err := r.Status().Update(ctx, httpSource); err != nil {
 			log.Error(err, "Failed to update HttpSource status")
 		}
 
-    // Wait 1 minute before requeing 
-    // exit without error so the requeue after works
+		// Wait 1 minute before requeing
+		// exit without error so the requeue after works
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
-  // Parse Users
-  // TODO: Should have a plugin interaface here
-  var users []string
+	// Parse Users
+	// TODO: Should have a plugin interaface here
+	var users []string
 
-  if httpSource.Spec.Format == "plaintext" {
-	  users, err = format.ParseUsersFromPlaintext(body)
-  }
+	if httpSource.Spec.Format == "plaintext" {
+		users, err = format.ParseUsersFromPlaintext(body)
+	}
 
 	if err != nil {
 		log.Error(err, "Failed to Parse Users")
@@ -143,83 +143,83 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		meta.SetStatusCondition(
 			&httpSource.Status.Conditions,
 			metav1.Condition{
-				Type:    "Failed",
-				Status:  metav1.ConditionTrue,
-				Reason:  "Parsing",
-			  LastTransitionTime:  metav1.Now(),
-				Message: "Failed to Parse Users from fetched file"})
+				Type:               "Failed",
+				Status:             metav1.ConditionTrue,
+				Reason:             "Parsing",
+				LastTransitionTime: metav1.Now(),
+				Message:            "Failed to Parse Users from fetched file"})
 
 		if err := r.Status().Update(ctx, httpSource); err != nil {
 			log.Error(err, "Failed to update HttpSource status")
 		}
 
-    // Wait 1 minute before requeing 
-    // exit without error so the requeue after works
+		// Wait 1 minute before requeing
+		// exit without error so the requeue after works
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
-  // TODO: Should have a plugin interaface here
+	// TODO: Should have a plugin interaface here
 	// Apply transformations
-  if len(httpSource.Spec.Transformers) > 0 {
-    for _ , t := range httpSource.Spec.Transformers {
-      if t.Type == "regexKeep" {
-        users, err = transformer.RegexKeep(users, t.Value)
-      } else if t.Type == "regexRemove" {
-        users, err = transformer.RegexRemove(users, t.Value)
-      } else if t.Type == "prefix" {
-        users, err = transformer.Prefix(users, t.Value)
-      } else if t.Type == "suffix" {
-        users, err = transformer.Suffix(users, t.Value)
-      }
+	if len(httpSource.Spec.Transformers) > 0 {
+		for _, t := range httpSource.Spec.Transformers {
+			if t.Type == "regexKeep" {
+				users, err = transformer.RegexKeep(users, t.Value)
+			} else if t.Type == "regexRemove" {
+				users, err = transformer.RegexRemove(users, t.Value)
+			} else if t.Type == "prefix" {
+				users, err = transformer.Prefix(users, t.Value)
+			} else if t.Type == "suffix" {
+				users, err = transformer.Suffix(users, t.Value)
+			}
 
-      if err != nil {
-	    	log.Error(err, "Failed to Apply Transformer")
+			if err != nil {
+				log.Error(err, "Failed to Apply Transformer")
 
-	    	meta.SetStatusCondition(
-	    		&httpSource.Status.Conditions,
-	    		metav1.Condition{
-	    			Type:    "Failed",
-	    			Status:  metav1.ConditionTrue,
-	    			Reason:  "Transformer",
-	    		  LastTransitionTime:  metav1.Now(),
-	    			Message: "Failed to apply transformer"})
+				meta.SetStatusCondition(
+					&httpSource.Status.Conditions,
+					metav1.Condition{
+						Type:               "Failed",
+						Status:             metav1.ConditionTrue,
+						Reason:             "Transformer",
+						LastTransitionTime: metav1.Now(),
+						Message:            "Failed to apply transformer"})
 
-	    	if err := r.Status().Update(ctx, httpSource); err != nil {
-	    		log.Error(err, "Failed to update Transformer")
-	    	}
+				if err := r.Status().Update(ctx, httpSource); err != nil {
+					log.Error(err, "Failed to update Transformer")
+				}
 
-        // Wait 1 minute before requeing 
-        // exit without error so the requeue after works
-	    	return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
-	    }
-    }
+				// Wait 1 minute before requeing
+				// exit without error so the requeue after works
+				return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+			}
+		}
 
-  }
+	}
 
-	// Validate - All elements must match 
-  err = validation.ValidateUsersRegex(users, httpSource.Spec.ValidationRegex)
-  // XXX: Should we apply a 0 list of subjects ? 
+	// Validate - All elements must match
+	err = validation.ValidateUsersRegex(users, httpSource.Spec.ValidationRegex)
+	// XXX: Should we apply a 0 list of subjects ?
 
-  if err != nil {
+	if err != nil {
 		log.Error(err, "Failed to Validate Users")
 
 		meta.SetStatusCondition(
 			&httpSource.Status.Conditions,
 			metav1.Condition{
-				Type:    "Failed",
-				Status:  metav1.ConditionTrue,
-				Reason:  "Validate",
-			  LastTransitionTime:  metav1.Now(),
-				Message: "Failed to Validate Users against regex"})
+				Type:               "Failed",
+				Status:             metav1.ConditionTrue,
+				Reason:             "Validate",
+				LastTransitionTime: metav1.Now(),
+				Message:            "Failed to Validate Users against regex"})
 
 		if err := r.Status().Update(ctx, httpSource); err != nil {
 			log.Error(err, "Failed to update HttpSource status")
 		}
 
-    // Wait 1 minute before requeing 
-    // exit without error so the requeue after works
+		// Wait 1 minute before requeing
+		// exit without error so the requeue after works
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
-  }
+	}
 
 	// Update Group
 
@@ -227,15 +227,15 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		fmt.Println("DEBUG", httpSource.Name, "USER : ", u)
 	}
 
-  // XXX: How to force the status to always update LastTransitionTime ?
+	// XXX: How to force the status to always update LastTransitionTime ?
 	meta.SetStatusCondition(
 		&httpSource.Status.Conditions,
 		metav1.Condition{
-			Type:    "Failed",
-			Status:  metav1.ConditionFalse,
-	   LastTransitionTime:  metav1.Now(),
-     Reason:  "Success",
-			Message: "Successfully Synced Group"})
+			Type:               "Failed",
+			Status:             metav1.ConditionFalse,
+			LastTransitionTime: metav1.Now(),
+			Reason:             "Success",
+			Message:            "Successfully Synced Group"})
 
 	if err := r.Status().Update(ctx, httpSource); err != nil {
 		log.Error(err, "Failed to update HttpSource status")
