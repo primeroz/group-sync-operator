@@ -9,5 +9,5 @@ metadata:
     app.kubernetes.io/created-by: group-sync-operator
   name: plaintext
 spec:
-  sourceUrl: https://pastila.nl/?2dd4b0b0/1c7b109d560196ce550d84501224f763#TX6UIqjY23x9Y4ox/Vs1gQ==
+  sourceUrl: https://gist.githubusercontent.com/primeroz/2f7df71498949026dc29ed4b591e2dc4/raw/81b0d78bc123b69de53b44abfa497844edb0ecb9/plaintext
   format: plaintext

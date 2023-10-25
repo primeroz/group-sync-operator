@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 	"io/ioutil"
 	"net/http"
 
@@ -84,7 +85,7 @@ func getFileFromHTTP(url string) ([]byte, error) {
 func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrllog.FromContext(ctx)
 
-	log.V(1).Info("Syncing")
+	log.V(1).Info("Syncing HttpSource")
 
 	httpSource := &groupsyncv1alpha1.HttpSource{}
 	err := r.Get(ctx, req.NamespacedName, httpSource)
@@ -114,28 +115,24 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				Type:    "Failed",
 				Status:  metav1.ConditionTrue,
 				Reason:  "Fetching",
+				LastTransitionTime:  metav1.Now(),
 				Message: fmt.Sprintf("Failed to fetch file from %s", httpSource.Spec.SourceUrl)})
 
 		if err := r.Status().Update(ctx, httpSource); err != nil {
 			log.Error(err, "Failed to update HttpSource status")
 		}
 
-		return ctrl.Result{}, err
+    // Wait 1 minute before requeing 
+		return ctrl.Result{RequeueAfter: 1 * time.Minute}, err
 	}
 
-	meta.SetStatusCondition(
-		&httpSource.Status.Conditions,
-		metav1.Condition{
-			Type:    "Failed",
-			Status:  metav1.ConditionFalse,
-			Reason:  "Fetching",
-			Message: fmt.Sprintf("successfully fetched file from %s", httpSource.Spec.SourceUrl)})
+  // Parse Users
+  // TODO: Should have a plugin interaface here
+  var users []string
 
-	if err := r.Status().Update(ctx, httpSource); err != nil {
-		log.Error(err, "Failed to update HttpSource status")
-	}
-
-	users, err := format.ParseUsersFromPlaintext(body)
+  if httpSource.Spec.Format == "plaintext" {
+	  users, err = format.ParseUsersFromPlaintext(body)
+  }
 
 	if err != nil {
 		log.Error(err, "Failed to Parse Users")
@@ -145,34 +142,41 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			metav1.Condition{
 				Type:    "Failed",
 				Status:  metav1.ConditionTrue,
-				Reason:  "ParsingUsers",
-				Message: "Failed to Parse users"})
+				Reason:  "Parsing",
+			  LastTransitionTime:  metav1.Now(),
+				Message: "Failed to Parse Users from fetched file"})
 
 		if err := r.Status().Update(ctx, httpSource); err != nil {
 			log.Error(err, "Failed to update HttpSource status")
 		}
 
-		return ctrl.Result{}, err
+    // Wait 1 minute before requeing 
+		return ctrl.Result{RequeueAfter: 1 * time.Minute}, err
 	}
 
+
+	// // Apply transformations
+
+	// // Validate
+
+	// // Update Group
+
+	for _, u := range users {
+		fmt.Println("USER : ", u)
+	}
+
+  // XXX: How to force the status to always update LastTransitionTime ?
 	meta.SetStatusCondition(
 		&httpSource.Status.Conditions,
 		metav1.Condition{
 			Type:    "Failed",
 			Status:  metav1.ConditionFalse,
-			Reason:  "ParsingUsers",
-			Message: "Failed to Parse users"})
+	   LastTransitionTime:  metav1.Now(),
+     Reason:  "Success",
+			Message: "Successfully Synced Group"})
 
 	if err := r.Status().Update(ctx, httpSource); err != nil {
 		log.Error(err, "Failed to update HttpSource status")
-	}
-
-	// Apply transformations
-
-	// Update Group
-
-	for _, u := range users {
-		log.Info("USER : ", u)
 	}
 
 	return ctrl.Result{}, nil
