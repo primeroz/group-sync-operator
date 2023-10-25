@@ -35,4 +35,4 @@ spec:
     - type: regexKeep
       value: "^.*@example.com$"
     - type: prefix
-      value: read-only-662591887723-role/AWSReservedSSO_DataPlaneReadOnlyDev_f9f51a48719807d8
+      value: read-only-662591887723-role/AWSReservedSSO_DataPlaneReadOnlyDev_f9f51a48719807d8:
