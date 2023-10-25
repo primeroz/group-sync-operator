@@ -161,7 +161,6 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
   // TODO: Should have a plugin interaface here
 	// Apply transformations
   if len(httpSource.Spec.Transformers) > 0 {
-	  log.V(1).Info("Users Before Transformers", "Instance", httpSource.Name)
     for _ , t := range httpSource.Spec.Transformers {
       if t.Type == "regexKeep" {
         users, err = transformer.RegexKeep(users, t.Value)
@@ -194,8 +193,6 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	    	return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	    }
     }
-
-	  log.V(1).Info("Users After Transformers", "Instance", httpSource.Name)
 
   }
 
