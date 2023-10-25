@@ -1,9 +1,8 @@
 package transformer
 
-import (
-)
+import ()
 
-func Prefix ( users []string, prefix string ) ([]string, error) {
+func Prefix(users []string, prefix string) ([]string, error) {
 	result := make([]string, len(users))
 
 	for i, user := range users {

@@ -1,28 +1,27 @@
 package validation
 
 import (
-  "regexp"
-  "errors"
+	"errors"
+	"regexp"
 )
 
+func ValidateUsersRegex(users []string, regex string) error {
 
-func ValidateUsersRegex(users []string, regex string ) error {
+	if regex == "" {
+		return errors.New("Regular Expression for validation cannot be empty string")
+	}
 
-  if regex == "" {
-    return errors.New("Regular Expression for validation cannot be empty string")
-  }
+	re, err := regexp.Compile(regex)
 
-  re, err := regexp.Compile(regex)
+	if err != nil {
+		return err
+	}
 
-  if err != nil {
-    return err
-  }
+	for _, user := range users {
+		if !re.MatchString(user) {
+			return errors.New("Elements of the users list not validating against Validation Regex")
+		}
+	}
 
-  for _, user := range users {
-    if !re.MatchString(user) {
-      return errors.New("Elements of the users list not validating against Validation Regex")
-    }
-  }
-
-  return nil
+	return nil
 }
