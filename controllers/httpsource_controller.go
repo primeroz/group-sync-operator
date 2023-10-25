@@ -18,10 +18,13 @@ package controllers
 
 import (
 	"context"
-	//"fmt"
+	"fmt"
+	"net/http"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,16 +70,45 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		// Error reading the object - requeue the request.
 		log.Error(err, "Failed to get HttpSource")
 
+		return ctrl.Result{}, err
+	}
+
+  // Fetch the file from the remote Url
+  resp, err := http.Get(httpSource.Spec.SourceUrl)
+	defer resp.Body.Close()
+
+	if err != nil {
+
+		meta.SetStatusCondition( 
+      &httpSource.Status.Conditions,  
+      metav1.Condition{   
+        Type: "Failed", 
+        Status: metav1.ConditionTrue,    
+        Reason: "Fetching", 
+        Message: fmt.Sprintf("Failed to fetch file from %s", httpSource.Spec.SourceUrl)})
+
+		return ctrl.Result{}, err
+	}
+
+	meta.SetStatusCondition( 
+    &httpSource.Status.Conditions,  
+    metav1.Condition{   
+      Type: "Failed", 
+      Status: metav1.ConditionFalse,    
+      Reason: "Fetching", 
+      Message: fmt.Sprintf("successfully fetched file from %s", httpSource.Spec.SourceUrl)})
+
+		if err := r.Status().Update(ctx, httpSource); err != nil {
+			log.Error(err, "Failed to update HttpSource status")
+			return ctrl.Result{}, err
+		}
+
 		// // The following implementation will raise an event
 		// r.Recorder.Event(cr, "Warning", "Deleting",
 		// 	fmt.Sprintf("Custom Resource %s is being deleted from the namespace %s",
 		// 		cr.Name,
 		// 		cr.Namespace))
 
-		return ctrl.Result{}, err
-	}
-
-	//ctrllog.Info(fmt.Printf("HttpSource: %#v " % httpSource))
 	log.Info("HttpSource: ")
 
 	return ctrl.Result{}, nil
