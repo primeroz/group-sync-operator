@@ -1,6 +1,14 @@
 resources:
 - ../config/default
   #- ../config/samples
+patches:
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/1/args/-
+      value: -zap-devel
+  target:
+    kind: Deployment
+    name: controller-manager
 
 # [WEBHOOK] To enable webhooks, uncomment all the sections with [WEBHOOK] prefix.
 # Do NOT uncomment sections with prefix [CERTMANAGER], as OLM does not support cert-manager.
