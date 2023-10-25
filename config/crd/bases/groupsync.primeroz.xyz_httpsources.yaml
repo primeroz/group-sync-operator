@@ -44,6 +44,37 @@ spec:
               sourceUrl:
                 description: Source URL where to fetch the file from
                 type: string
+              transformers:
+                description: List of Transformers to apply to each element
+                items:
+                  properties:
+                    type:
+                      description: Type of Transformer
+                      enum:
+                      - prefix
+                      - suffix
+                      - regexReplace
+                      - regexRemove
+                      - regexKeep
+                      - camelCase
+                      - jsonPathExtract
+                      type: string
+                    value:
+                      description: Value of Transformer
+                      type: string
+                  required:
+                  - type
+                  - value
+                  type: object
+                type: array
+              validationRegex:
+                description: Validation Regular Expression to validate each entry
+                  before syncing as group subject
+                type: string
+            required:
+            - format
+            - sourceUrl
+            - validationRegex
             type: object
           status:
             description: HttpSourceStatus defines the observed state of HttpSource

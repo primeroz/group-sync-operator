@@ -30,13 +30,37 @@ type HttpSourceSpec struct {
 
 	// Source URL where to fetch the file from
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	SourceUrl string `json:"sourceUrl,omitempty"`
+  // +kubebuilder:validation:Required
+	SourceUrl string `json:"sourceUrl"`
 
 	// Format of the file
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Enum=plaintext;json
-	Format string `json:"format,omitempty"`
+  // +kubebuilder:validation:Required
+	Format string `json:"format"`
+
+	// Validation Regular Expression to validate each entry before syncing as group subject
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+  // +kubebuilder:validation:Required
+	ValidationRegex string `json:"validationRegex"`
+
+	// List of Transformers to apply to each element
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Transformers []Transformer `json:"transformers,omitempty"`
 }
+
+type Transformer struct {
+	// Type of Transformer
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Enum=prefix;suffix;regexReplace;regexRemove;regexKeep;camelCase;jsonPathExtract
+  // +kubebuilder:validation:Required
+	Type string `json:"type"`
+
+	// Value of Transformer
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Value string `json:"value,omnitempty"`
+}
+
 
 // HttpSourceStatus defines the observed state of HttpSource
 type HttpSourceStatus struct {

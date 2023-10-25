@@ -35,6 +35,7 @@ import (
 
 	groupsyncv1alpha1 "github.com/primeroz/group-sync-operator/api/v1alpha1"
 	"github.com/primeroz/group-sync-operator/pkg/format"
+	"github.com/primeroz/group-sync-operator/pkg/validation"
 )
 
 // HttpSourceReconciler reconciles a HttpSource object
@@ -123,7 +124,8 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 
     // Wait 1 minute before requeing 
-		return ctrl.Result{RequeueAfter: 1 * time.Minute}, err
+    // exit without error so the requeue after works
+		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
   // Parse Users
@@ -151,15 +153,37 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 
     // Wait 1 minute before requeing 
-		return ctrl.Result{RequeueAfter: 1 * time.Minute}, err
+    // exit without error so the requeue after works
+		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
+	// Apply transformations
 
-	// // Apply transformations
+	// Validate - All elements must match 
+  err = validation.ValidateUsersRegex(users, httpSource.Spec.ValidationRegex)
 
-	// // Validate
+  if err != nil {
+		log.Error(err, "Failed to Validate Users")
 
-	// // Update Group
+		meta.SetStatusCondition(
+			&httpSource.Status.Conditions,
+			metav1.Condition{
+				Type:    "Failed",
+				Status:  metav1.ConditionTrue,
+				Reason:  "Validate",
+			  LastTransitionTime:  metav1.Now(),
+				Message: "Failed to Validate Users against regex"})
+
+		if err := r.Status().Update(ctx, httpSource); err != nil {
+			log.Error(err, "Failed to update HttpSource status")
+		}
+
+    // Wait 1 minute before requeing 
+    // exit without error so the requeue after works
+		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+  }
+
+	// Update Group
 
 	for _, u := range users {
 		fmt.Println("USER : ", u)
