@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"io/ioutil"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,6 +40,44 @@ type HttpSourceReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+}
+
+var currentEtag string
+
+func getFileFromHTTP(url string, etag string) ([]byte, string, error) {
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+        return nil, "", err
+    }
+
+    // Set the If-None-Match header if an ETag is provided
+    if etag != "" {
+        req.Header.Set("If-None-Match", etag)
+    }
+
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return nil, "", err
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode == http.StatusNotModified {
+        return nil, etag, nil // Content hasn't changed, return existing data and ETag
+    }
+
+    if resp.StatusCode != http.StatusOK {
+        return nil, "", fmt.Errorf("Unexpected status code: %d", resp.StatusCode)
+    }
+
+    newEtag := resp.Header.Get("ETag")
+
+    // Read the response body
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return nil, "", err
+    }
+
+    return body, newEtag, nil // Return the list of users and the new ETag
 }
 
 //+kubebuilder:rbac:groups=groupsync.primeroz.xyz,resources=httpsources,verbs=get;list;watch;create;update;patch;delete
@@ -74,8 +113,8 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
   // Fetch the file from the remote Url
-  resp, err := http.Get(httpSource.Spec.SourceUrl)
-	defer resp.Body.Close()
+
+  body, newEtag, err := getFileFromHTTP(httpSource.Spec.SourceUrl, currentEtag)
 
 	if err != nil {
 
@@ -90,26 +129,40 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	meta.SetStatusCondition( 
-    &httpSource.Status.Conditions,  
-    metav1.Condition{   
-      Type: "Failed", 
-      Status: metav1.ConditionFalse,    
-      Reason: "Fetching", 
-      Message: fmt.Sprintf("successfully fetched file from %s", httpSource.Spec.SourceUrl)})
+  if newEtag != "" {
+   currentEtag = newEtag
+  }
 
-		if err := r.Status().Update(ctx, httpSource); err != nil {
-			log.Error(err, "Failed to update HttpSource status")
-			return ctrl.Result{}, err
-		}
+  if body == nil {
+    // Content has not changed
+	  meta.SetStatusCondition( 
+      &httpSource.Status.Conditions,  
+      metav1.Condition{   
+        Type: "Failed", 
+        Status: metav1.ConditionFalse,    
+        Reason: "Fetching", 
+        Message: fmt.Sprintf("Content from %s has not changed since last check etag %s", httpSource.Spec.SourceUrl, currentEtag)})
+
+  } else {
+	  meta.SetStatusCondition( 
+      &httpSource.Status.Conditions,  
+      metav1.Condition{   
+        Type: "Failed", 
+        Status: metav1.ConditionFalse,    
+        Reason: "Fetching", 
+        Message: fmt.Sprintf("successfully fetched file from %s", httpSource.Spec.SourceUrl)})
+  }
+
+	if err := r.Status().Update(ctx, httpSource); err != nil {
+		log.Error(err, "Failed to update HttpSource status")
+		return ctrl.Result{}, err
+	}
 
 		// // The following implementation will raise an event
 		// r.Recorder.Event(cr, "Warning", "Deleting",
 		// 	fmt.Sprintf("Custom Resource %s is being deleted from the namespace %s",
 		// 		cr.Name,
 		// 		cr.Namespace))
-
-	log.Info("HttpSource: ")
 
 	return ctrl.Result{}, nil
 }
