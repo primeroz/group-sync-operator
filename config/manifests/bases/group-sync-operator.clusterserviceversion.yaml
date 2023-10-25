@@ -1,0 +1,48 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: group-sync-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: HttpSource is the Schema for the httpsources API
+      displayName: Http Source
+      kind: HttpSource
+      name: httpsources.groupsync.primeroz.xyz
+      version: v1alpha1
+  description: Operator to sync groups from source to kubernetes
+  displayName: group-sync-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - groups
+  - rbac
+  links:
+  - name: Group Sync Operator
+    url: https://group-sync-operator.domain
+  maintainers:
+  - email: primeroznl@gmail.com
+    name: francesco
+  maturity: alpha
+  provider:
+    name: Primeroz
+  version: 0.0.0

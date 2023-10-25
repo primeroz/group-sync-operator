@@ -1,0 +1,22 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: group-sync-operator
+build:
+  local:
+    useBuildkit: true
+  artifacts:
+    - image: primeroz/group-sync-operator
+      context: .
+      docker:
+        dockerfile: Dockerfile
+manifests:
+   kustomize:
+      paths:
+       - deploy/
+deploy:
+  kubeContext: kind-kind
+  kubectl: {}
+    #manifests:
+    #- deploy/operator.yaml
+      #- deploy/crds/app.example.com_myapps_crd.yaml

@@ -1,0 +1,31 @@
+# permissions for end users to edit httpsources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: httpsource-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: group-sync-operator
+    app.kubernetes.io/part-of: group-sync-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: httpsource-editor-role
+rules:
+- apiGroups:
+  - groupsync.primeroz.xyz
+  resources:
+  - httpsources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - groupsync.primeroz.xyz
+  resources:
+  - httpsources/status
+  verbs:
+  - get

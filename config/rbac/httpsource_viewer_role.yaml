@@ -1,0 +1,27 @@
+# permissions for end users to view httpsources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: httpsource-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: group-sync-operator
+    app.kubernetes.io/part-of: group-sync-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: httpsource-viewer-role
+rules:
+- apiGroups:
+  - groupsync.primeroz.xyz
+  resources:
+  - httpsources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - groupsync.primeroz.xyz
+  resources:
+  - httpsources/status
+  verbs:
+  - get

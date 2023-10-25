@@ -1,0 +1,13 @@
+apiVersion: groupsync.primeroz.xyz/v1alpha1
+kind: HttpSource
+metadata:
+  labels:
+    app.kubernetes.io/name: httpsource
+    app.kubernetes.io/instance: httpsource-sample
+    app.kubernetes.io/part-of: group-sync-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: group-sync-operator
+  name: plaintext
+spec:
+  sourceUrl: https://pastila.nl/?2dd4b0b0/1c7b109d560196ce550d84501224f763#TX6UIqjY23x9Y4ox/Vs1gQ==
+  format: plaintext
