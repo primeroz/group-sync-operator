@@ -1,3 +1,4 @@
+---
 apiVersion: groupsync.primeroz.xyz/v1alpha1
 kind: HttpSource
 metadata:
@@ -11,4 +12,27 @@ metadata:
 spec:
   sourceUrl: https://gist.githubusercontent.com/primeroz/2f7df71498949026dc29ed4b591e2dc4/raw/81b0d78bc123b69de53b44abfa497844edb0ecb9/plaintext
   format: plaintext
-  validationRegex: "^.*@clickhouse.com$"
+  validationRegex: "^.*@example.com$"
+  transformers: 
+    - type: regexKeep
+      value: "^.*@example.com$"
+---
+apiVersion: groupsync.primeroz.xyz/v1alpha1
+kind: HttpSource
+metadata:
+  labels:
+    app.kubernetes.io/name: httpsource
+    app.kubernetes.io/instance: httpsource-sample
+    app.kubernetes.io/part-of: group-sync-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: group-sync-operator
+  name: plaintext-aws
+spec:
+  sourceUrl: https://gist.githubusercontent.com/primeroz/2f7df71498949026dc29ed4b591e2dc4/raw/81b0d78bc123b69de53b44abfa497844edb0ecb9/plaintext
+  format: plaintext
+  validationRegex: "^.*@example.com$"
+  transformers: 
+    - type: regexKeep
+      value: "^.*@example.com$"
+    - type: prefix
+      value: read-only-662591887723-role/AWSReservedSSO_DataPlaneReadOnlyDev_f9f51a48719807d8

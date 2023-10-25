@@ -36,6 +36,7 @@ import (
 	groupsyncv1alpha1 "github.com/primeroz/group-sync-operator/api/v1alpha1"
 	"github.com/primeroz/group-sync-operator/pkg/format"
 	"github.com/primeroz/group-sync-operator/pkg/validation"
+	"github.com/primeroz/group-sync-operator/pkg/transformer"
 )
 
 // HttpSourceReconciler reconciles a HttpSource object
@@ -157,10 +158,49 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
+  // TODO: Should have a plugin interaface here
 	// Apply transformations
+  if len(httpSource.Spec.Transformers) > 0 {
+    for _ , t := range httpSource.Spec.Transformers {
+      if t.Type == "regexKeep" {
+        fmt.Println("Pre Regexkeep", users)
+        users, err = transformer.RegexKeep(users, t.Value)
+        fmt.Println("post Regexkeep", users)
+      } else if t.Type == "regexRemove" {
+        users, err = transformer.RegexRemove(users, t.Value)
+      } else if t.Type == "prefix" {
+        users, err = transformer.Prefix(users, t.Value)
+      } else if t.Type == "suffix" {
+        users, err = transformer.Suffix(users, t.Value)
+      }
+
+      if err != nil {
+	    	log.Error(err, "Failed to Apply Transformer")
+
+	    	meta.SetStatusCondition(
+	    		&httpSource.Status.Conditions,
+	    		metav1.Condition{
+	    			Type:    "Failed",
+	    			Status:  metav1.ConditionTrue,
+	    			Reason:  "Transformer",
+	    		  LastTransitionTime:  metav1.Now(),
+	    			Message: "Failed to apply transformer"})
+
+	    	if err := r.Status().Update(ctx, httpSource); err != nil {
+	    		log.Error(err, "Failed to update Transformer")
+	    	}
+
+        // Wait 1 minute before requeing 
+        // exit without error so the requeue after works
+	    	return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+	    }
+
+    }
+  }
 
 	// Validate - All elements must match 
   err = validation.ValidateUsersRegex(users, httpSource.Spec.ValidationRegex)
+  // XXX: Should we apply a 0 list of subjects ? 
 
   if err != nil {
 		log.Error(err, "Failed to Validate Users")
@@ -186,7 +226,7 @@ func (r *HttpSourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// Update Group
 
 	for _, u := range users {
-		fmt.Println("USER : ", u)
+		fmt.Println(httpSource.Name, "USER : ", u)
 	}
 
   // XXX: How to force the status to always update LastTransitionTime ?
