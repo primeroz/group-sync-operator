@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -63,7 +63,7 @@ func getFileFromHTTP(url string) ([]byte, error) {
 	}
 
 	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +71,7 @@ func getFileFromHTTP(url string) ([]byte, error) {
 	return body, nil
 }
 
+// TODO: ADd extra rbac here for group sybjects management
 //+kubebuilder:rbac:groups=groupsync.primeroz.xyz,resources=httpsources,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=groupsync.primeroz.xyz,resources=httpsources/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=groupsync.primeroz.xyz,resources=httpsources/finalizers,verbs=update
